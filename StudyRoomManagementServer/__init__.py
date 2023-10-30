@@ -109,6 +109,7 @@ def create_app() -> Flask:
         return {"message": "okay"}
 
     @app.route("/api/logout")
+    @app.route("/logout")
     def logout():
         resp = make_response(redirect("/"))
         resp.set_cookie("Authorization", "", expires=0)
