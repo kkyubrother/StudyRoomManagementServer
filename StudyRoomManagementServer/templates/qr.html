@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>QR 입장 확인</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+{#    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>#}
+    <script src="{{ url_for('serve_html5_qrcode') }}" type="text/javascript"></script>
+
+    <style>
+        @font-face {
+            font-family: "Noto Sans";
+            font-style: normal;
+            font-weight: 400;
+            src: url({{ url_for('serve_font', filename='NotoSansKR-Medium.otf') }}) format("otf");
+        }
+        body {
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #open_close_time {
+            margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 3rem;
+            {#font-weight: bold;#}
+        }
+        #reader {
+            width: 80vh;
+        }
+        #reader > video {
+            transform: scaleX(-1);
+        }
+        #devices {
+            width: 30vh;
+        }
+        .neonText {
+            font-family: "Noto Sans", serif;
+            color: #fff;
+            text-shadow:
+                /* White glow */ 0 0 7px #fff, 0 0 10px #fff, 0 0 21px #fff,
+                /* Green glow */ 0 0 42px #5AC3E1, 0 0 82px #5AC3E1, 0 0 92px #5AC3E1, 0 0 102px #5AC3E1, 0 0 151px #5AC3E1;
+        }
+    </style>
+</head>
+<body>
+<div id="open_close_time" class="neonText">
+    금일 카페 운영 시간은&nbsp;
+    <div id="open_time">00:00</div>
+    &nbsp;~&nbsp;
+    <div id="close_time">00:00</div>
+</div>
+<div id="reader"></div>
+<div id="devices">
+    <label for="device-select">카메라를 선택하세요:</label>
+    <select name="device" id="device-select" class="form-select" onchange="handleChangeSelect()">
+        <option value="">--Please choose an option--</option>
+    </select>
+</div>
+<div class="modal fade" id="modal-result" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="result-title">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="result-body">
+                <p>
+                    <span>이름:</span><span id="result-name"></span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="result-close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const modalResult = new bootstrap.Modal(document.getElementById('modal-result'), {
+        keyboard: false
+    });
+
+    const soundSuccess = new Audio("{{ url_for('serve_sound_success') }}");
+    soundSuccess.loop = false;
+    soundSuccess.currentTime = 0;
+    soundSuccess.volume = 1.0;
+
+    const soundFail = new Audio("{{ url_for('serve_sound_fail') }}");
+    soundFail.loop = false;
+    soundFail.currentTime = 0;
+    soundFail.volume = 1.0;
+
+    function countClosing(seconds) {
+        if (isNaN(seconds) || seconds <= 0) closeModal();
+        else {
+            const close = document.querySelector("#result-close");
+            close.innerText = `(${seconds}초 후)닫기`;
+            setTimeout(countClosing, 1000, seconds - 1);
+        }
+    }
+    function closeModal() {
+        modalResult.hide();
+        setTimeout(restart_scan, 500);
+    }
+    function updateResult(result) {
+        const title = document.querySelector("#result-title");
+        title.innerText = result.message;
+        const body = document.querySelector("#result-body");
+        body.innerHTML = "";
+        const elem = document.createElement("p");
+
+        if (result.status === "confirm") {
+            const elem_name = document.createElement("span");
+            elem_name.innerText = "이름: ";
+            const elem_name_value = document.createElement("span");
+            elem_name_value.innerText = result.name;
+
+            elem.appendChild(elem_name);
+            elem.appendChild(elem_name_value);
+            elem.appendChild(document.createElement("br"));
+
+            const elem_gender = document.createElement("span");
+            elem_gender.innerText = "성별: ";
+            const elem_gender_value = document.createElement("span");
+            elem_gender_value.innerText = Number(result.gender) % 2 ? "남성" : "여성";
+
+            elem.appendChild(elem_gender);
+            elem.appendChild(elem_gender_value);
+            elem.appendChild(document.createElement("br"));
+
+            const elem_etc = document.createElement("span");
+            elem_etc.innerText = "기타: ";
+            const elem_etc_value = document.createElement("span");
+            elem_etc_value.innerText = "";
+
+            elem.appendChild(elem_etc);
+            elem.appendChild(elem_etc_value);
+
+            if (!soundSuccess.paused) soundSuccess.pause();
+            soundSuccess.currentTime = 0;
+            soundSuccess.play();
+        }
+        else {
+            const elem_ann = document.createElement("span");
+            elem_ann.innerText = "안내:";
+            const elem_ann_value = document.createElement("span");
+            elem_ann_value.innerText = result.message;
+
+            elem.appendChild(elem_ann);
+            elem.appendChild(elem_ann_value);
+
+            if (!soundFail.paused) soundFail.pause();
+            soundFail.currentTime = 0;
+            soundFail.play();
+        }
+
+        body.appendChild(elem);
+        modalResult.show();
+        countClosing(3);
+    }
+    function requestQR(qr_code) {
+        fetch("{{ url_for('auth.post_qr_authorization_enter') }}", {
+            method: "POST",
+            cache: "no-cache",
+            headers: {
+                Authorization: `QR ${qr_code}`
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            updateResult(result);
+        })
+    }
+</script>
+<script>
+    const html5QrCode = new Html5Qrcode(/* element id */ "reader");
+    let cameraId = localStorage.getItem("cameraId");
+    const config = {
+        fps: 10,    // Optional, frame per seconds for qr code scanning
+        qrbox: { width: 250, height: 250 }  // Optional, if you want bounded box UI
+    }
+    const handleScanSuccess = (decodedText, decodedResult) => {
+        // do something when code is read
+        html5QrCode
+            .stop()
+            .then(() => requestQR(decodedText))
+            .catch(() => {})
+    }
+
+    function handleChangeSelect() {
+        const selector = document.querySelector("#device-select");
+
+        cameraId = selector.options[selector.selectedIndex].value;
+        localStorage.setItem("cameraId", cameraId);
+        restart_scan();
+    }
+
+    function restart_scan() {
+        try {
+            html5QrCode
+                .stop()
+                .then(() => {
+                    start_scan();
+                })
+                .catch(e => {
+                    console.error(e)
+                })
+        }
+        catch (e) {
+            start_scan();
+        }
+    }
+
+    function start_scan() {
+        if (cameraId === "" || cameraId === null) {return}
+
+        html5QrCode.start(
+            cameraId,
+            config,
+            handleScanSuccess,
+            (handleScanSuccess) => {}
+        )
+            .catch((err) => {});
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        Html5Qrcode
+            .getCameras()
+            .then(devices => {
+                if (devices && devices.length) {
+                    const selector = document.querySelector("#device-select");
+                    devices.map(item => {
+                        const elem = document.createElement("option");
+                        const elem_text = document.createTextNode(item.label);
+                        elem.setAttribute("value", item.id);
+                        if (cameraId !== null && cameraId === item.id) {
+                            elem.selected = true;
+                        }
+                        elem.appendChild(elem_text);
+                        selector.appendChild(elem)
+                    })
+                    start_scan();
+                }
+                else {
+                    const elem = document.createElement("option");
+                    const elem_text = document.createTextNode("No Camera");
+                    elem.setAttribute("value", "");
+                    elem.appendChild(elem_text);
+                    selector.appendChild(elem)
+                }
+            })
+            .catch(err => {
+                // handle err
+                console.error(err);
+                const elem = document.createElement("option");
+                const elem_text = document.createTextNode("No Camera");
+                elem.setAttribute("value", "");
+                elem.appendChild(elem_text);
+                selector.appendChild(elem)
+            });
+    });
+</script>
+<script>
+    const CAFE_OPEN_TIME_TEXT = "cafe_open_time_text";
+    const CAFE_CLOSE_TIME_TEXT = "cafe_close_time_text";
+    async function load_setting(setting_key) {
+        const response = await fetch(`/api/config/${setting_key}`);
+        if (response.status !== 200) {
+            return;
+        }
+        const result = await response.json();
+        return result[setting_key];
+    }
+
+    async function load_open_close_time() {
+        let open_time, close_time;
+        try {
+            open_time = await load_setting(CAFE_OPEN_TIME_TEXT);
+            close_time = await load_setting(CAFE_CLOSE_TIME_TEXT);
+
+            if (open_time) {
+                document.getElementById("open_time").innerText = open_time;
+            }
+            if (close_time) {
+                document.getElementById("close_time").innerText = close_time;
+            }
+        } catch (e) {
+            if (window.location.host.startsWith("localhost")) {
+                console.log(e);
+            }
+        }
+    }
+    setInterval(load_open_close_time, 1000);
+</script>
+</body>
+</html>
