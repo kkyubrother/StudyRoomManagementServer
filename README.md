@@ -7,6 +7,9 @@
 * 스터디룸 결제 정보를 관리(추가, 삭제)합니다.
 * 단체 마일리지 정보를 관리합니다.
 
+# 설계
+* [사물함 DB 및 API 문서](https://kkyubr.notion.site/LockerBot-15978dc723bf43dfbcb95e0344fd7195?pvs=4)
+
 
 # 설치
 1. `sudo apt install -y mariadb-server libmariadb-dev`
