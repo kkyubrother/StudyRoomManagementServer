@@ -85,7 +85,6 @@ def remove_no_show():
 def get_books():
     print("api.books.get_books")
     user_id, book_date, department = _get_books_args()
-    print(book_date, type(book_date))
     q = RoomBook.query.filter_by(reason=None)
 
     if user_id is not None:
