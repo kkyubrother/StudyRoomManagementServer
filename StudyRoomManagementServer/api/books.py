@@ -53,7 +53,7 @@ def remove_no_show():
         return
     start_time_limit = (now - dt.timedelta(minutes=20)).time()
 
-    for book in RoomBook.query.filter_by(book_date=now.date()).all():
+    for book in RoomBook.query.filter_by(book_date=dt.datetime(now.date().year, now.date().month, now.date().day)).all():
         book: RoomBook
         if book.start_time >= start_time_limit:
             continue
@@ -91,7 +91,7 @@ def get_books():
         q = q.filter_by(user_id=user_id)
 
     if book_date is not None:
-        q = q.filter_by(book_date=book_date)
+        q = q.filter_by(book_date=dt.datetime(book_date.year, book_date.month, book_date.day))
 
     books = [rb.publics_to_dict() for rb in q.all()]
 
@@ -143,7 +143,7 @@ def get_book_timetable(date_string: str):
         with_text = False
 
     books = RoomBook.query\
-        .filter_by(book_date=date, reason=None)\
+        .filter_by(book_date=dt.datetime(date.year, date.month, date.day), reason=None)\
         .filter(RoomBook.status != RoomBook.STATUS_CANCELED)\
         .all()
 

@@ -91,12 +91,13 @@ def request_sms_code_by_chat_id(chat_id: int):
 
     send(user.num, f"인증번호: {new_code:0>6}")
 
-    if current_app.debug:
-        return {
-            "message": "send new code",
-            "sms": user.sms % 1_000_000,
-        }
-    return {"message": "send new code"}
+    # if current_app.debug:
+    #     return {
+    #         "message": "send new code",
+    #         "sms": f"{new_code:0>6}",
+    #     }
+    # for demo
+    return {"message": "send new code", "sms": f"{new_code:0>6}"}
 
 
 @bp.route("/users/by_chat_id/<int:chat_id>/sms", methods=["POST"])

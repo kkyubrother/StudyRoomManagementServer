@@ -128,7 +128,7 @@ def get_otp():
 
     return {
         "ip": ip,
-        "header_auth": auth
+        "header_auth": auth,
     }
 
 

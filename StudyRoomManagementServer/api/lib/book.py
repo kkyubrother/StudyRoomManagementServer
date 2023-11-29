@@ -16,7 +16,7 @@ def raise_for_duplication(
     start_time_second = start_time.hour * 60 + start_time.minute
     end_time_second = end_time.hour * 60 + end_time.minute
 
-    for room_book in RoomBook.query.filter_by(reason=None).filter_by(book_date=date, room_id=room_id).all():
+    for room_book in RoomBook.query.filter_by(reason=None).filter_by(book_date=dt.datetime(date.year, date.month, date.day), room_id=room_id).all():
         rb_s = room_book.start_time_second
         rb_e = room_book.end_time_second
         s = start_time_second

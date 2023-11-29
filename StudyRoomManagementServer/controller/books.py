@@ -38,7 +38,7 @@ def get_book_timetable_img(date_string: str):
     # books = RoomBook.query.filter_by(book_date=date).all()
 
     books = RoomBook.query\
-        .filter_by(book_date=date, reason=None)\
+        .filter_by(book_date=dt.datetime(date.year, date.month, date.day), reason=None)\
         .filter(RoomBook.status != RoomBook.STATUS_CANCELED)\
         .all()
     # books: List[RoomBook] = RoomBook.query.filter_by(book_date=date).all()
@@ -62,7 +62,7 @@ def get_book_list(date_str: Optional[str] = None, user_id: Optional[int] = None)
         room_book_query = room_book_query.filter_by(user_id=user_id)
 
     if date:
-        room_book_query = room_book_query.filter_by(book_date=date)
+        room_book_query = room_book_query.filter_by(book_date=dt.datetime(date.year, date.month, date.day))
     else:
         room_book_query = room_book_query.filter(
             RoomBook.book_date >= dt.datetime.now(tz=pytz.timezone("Asia/Seoul")).date()
