@@ -185,10 +185,8 @@ def get_book_by_book_id(book_id: int):
     return get_book(book_id)
 
 
-
 def generate_new_code() -> int:
     code = int("".join([choice(digits) for _ in range(6)]))
     if code == 1:
         return generate_new_code()
     return code
-

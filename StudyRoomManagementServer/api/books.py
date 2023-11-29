@@ -85,6 +85,7 @@ def remove_no_show():
 def get_books():
     print("api.books.get_books")
     user_id, book_date, department = _get_books_args()
+    print(book_date, type(book_date))
     q = RoomBook.query.filter_by(reason=None)
 
     if user_id is not None:
@@ -647,7 +648,7 @@ def _put_book_cancel(user: User, book_id: int):
 # @need_authorization(allow=(Authorization.WEB,))
 @check_user_from_cookie_authorization
 def del_book_by_admin(book_id: int):
-    """웹에서 플린이가 호출하는 예약 삭제"""
+    """웹에서 매니저가 호출하는 예약 삭제"""
     print("api.books.del_book_by_admin")
     user = get_user_from_cookie_authorization()
     commander_chat_id = user.chat_id

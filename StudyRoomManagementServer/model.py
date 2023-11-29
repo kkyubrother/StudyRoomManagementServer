@@ -334,11 +334,11 @@ class Pay(db.Model):
         elif self.pay_type.startswith("saved_money.d"):
             return "지역적립금"
         elif self.pay_type.startswith("donation.card"):
-            return "후원(카드)"
+            return "적립(카드)"
         elif self.pay_type.startswith("donation.transfer"):
-            return "후원(이체)"
+            return "적립(이체)"
         elif self.pay_type.startswith("donation.cash"):
-            return "후원(현금)"
+            return "적립(현금)"
         elif self.pay_type.startswith("transfer"):
             return "계좌이체"
         elif self.pay_type.startswith("cash"):
@@ -594,7 +594,6 @@ class CommuteBackup(db.Model):
     exit_time = db.Column(db.DateTime(timezone=True), default=None)
 
 
-
 class Commute(db.Model):
     """근무 관련 정보 저장"""
     __tablename__ = "commute_v2"
@@ -607,47 +606,3 @@ class Commute(db.Model):
     enter_time = db.Column(db.DateTime(timezone=True))
     exit_time = db.Column(db.DateTime(timezone=True), default=None)
     record = db.Column(db.String(16), nullable=True)
-
-
-class Notice(db.Model):
-    """사물함 결제 관련 정보 저장"""
-    __tablename__ = "notice"
-    __table_args__ = {"mysql_collate": "utf8_general_ci"}
-
-    id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
-    created = db.Column(db.DateTime(timezone=True), default=func.now())
-    publish_date = db.Column(db.String(64))
-    text = db.Column(db.String(4096))
-    picture = db.Column(db.String(4096))
-
-    def to_dict(self) -> dict:
-        dict_ = publics_to_dict(self)
-        dict_["notice_id"] = dict_["id"]
-        if "created" in dict_:
-            dict_["created"] = dict_["created"].isoformat()
-        del dict_["id"]
-
-        dict_["picture"] = json.loads(dict_["picture"])
-        return dict_
-
-
-class NoticeTarget(db.Model):
-    """사물함 결제 관련 정보 저장"""
-    __tablename__ = "notice_target"
-    __table_args__ = {"mysql_collate": "utf8_general_ci"}
-
-    id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    notice_id = db.Column(db.Integer, db.ForeignKey("notice.id"), nullable=True)
-    created = db.Column(db.DateTime(timezone=True), default=func.now())
-    result = db.Column(db.String(4096))
-    setting = db.Column(db.String(4096))
-
-    def to_dict(self) -> dict:
-        dict_ = publics_to_dict(self)
-        dict_["notice_target_id"] = dict_["id"]
-        if "created" in dict_:
-            dict_["created"] = dict_["created"].isoformat()
-        del dict_["id"]
-
-        return dict_

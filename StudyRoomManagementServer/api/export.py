@@ -73,7 +73,7 @@ def _export_log_user(data: ImmutableMultiDict, types: str = "all") -> List[Tuple
 def _export_log_donation(data: ImmutableMultiDict, types: str = "all") -> List[Tuple[str, Union[str, int]]]:
     start_date = data.get("start_date", type=str)
     end_date = data.get("end_date", type=str)
-    column = ["후원 ID", "후원 일자", "시간", "후원자 이름", "전화번호", "후원자 지역", "후원 방법", "후원 금액", "상태", "기타"]
+    column = ["적립 ID", "적립 일자", "시간", "적립자 이름", "전화번호", "적립자 지역", "적립 방법", "적립 금액", "상태", "기타"]
 
     pays = Pay.query.filter(Pay.pay_type.like("donation%"))\
         .filter(db.and_(db.func.date(Pay.created) >= start_date, db.func.date(Pay.created) <= end_date))

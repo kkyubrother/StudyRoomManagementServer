@@ -82,7 +82,7 @@ def get_pay_receipt(pay_id: int):
     menus = []
     store = Store("카페", "부산 강서구 낙동북로 477 강서구청", "강서구", "000-00-12345", "010-0000-0000")
     if pay.saved_money_id:
-        menus.append(Menu(f"후원", pay.paid, 1))
+        menus.append(Menu(f"적립", pay.paid, 1))
     else:
         book: RoomBook = RoomBook.query.filter_by(id=pay.book_id).first()
         room: Room = Room.query.filter_by(id=book.room_id).first()

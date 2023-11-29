@@ -60,7 +60,7 @@ def __create_normal_membership_image(user_id, revision, code) -> BytesIO:
 
 
 def __create_vip_membership_image(user_id, revision, code) -> BytesIO:
-    """원장 회원권 생성"""
+    """특별 회원 회원권 생성"""
     if get_config().user_membership_vip_file:
         qr_img_path = os.path.join(current_app.config["INSTANCE"], get_config().user_membership_vip_file)
     else:

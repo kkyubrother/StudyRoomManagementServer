@@ -15,12 +15,12 @@ def is_normal(user: User) -> bool:
 
 
 def is_vip(user: User) -> bool:
-    """원장인가?"""
+    """특별회원인가?"""
     return user.grade >= GRADE_VIP
 
 
 def is_manager(user: User) -> bool:
-    """플린이인가?"""
+    """매니저인가?"""
     return user.grade >= GRADE_MANAGER
 
 
