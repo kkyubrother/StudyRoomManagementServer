@@ -13,7 +13,6 @@ from ..model import Transaction, User, Pay, db, SavedMoney, RoomBook, Message
 
 bp = Blueprint("transaction", __name__, url_prefix="/api/transaction")
 
-# CAT_ID = 2267950001
 CAT_ID = Transaction.STUDY_CAT_ID
 TYPE_NONE = Transaction.TYPE_NONE
 TYPE_CARD_REQUEST = Transaction.TYPE_CARD_REQUEST
