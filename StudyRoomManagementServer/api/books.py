@@ -481,152 +481,153 @@ def _put_book_cancel(user: User, book_id: int):
     ).all()
     cancel_reason = f"[{dt.datetime.now(tz=pytz.timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')}]"
 
-    if not pays or len(pays) == 0:
-        if Pay.query.filter_by(book_id=book.id, status=Pay.STATUS_WAITING).all():
-            return {
-                "status": Pay.STATUS_REJECT,
-                "message": "결제 대기중인 예약은 취소가 불가합니다. 잠시 후에 다시 시도하세요.",
-            }, 403
-        cancel_reason += "사용자가 취소하였습니다."
-
-        book.reason = cancel_reason
-        book.status = RoomBook.STATUS_CANCELED
-        db.session.add(book)
-        db.session.add(
-            create_web_log(
-                "book.cancel.success", {"cancel_reason": cancel_reason}, user.id
-            )
-        )
-        db.session.commit()
-
-        result = book.publics_to_dict()
-        result["status"] = Pay.STATUS_CONFIRM
-        result["message"] = cancel_reason
-        result["refund_pay"] = None
-        return result
-
-    elif len(pays) >= 2 and pays[0].paid == pays[-1].paid:
-        cancel_reason += "사용자가 취소했습니다(취소 환불 내역이 존재합니다)."
-
-    elif len(pays) == 1:
-        # data = request.get_json()
-        # cashier = data["cashier"] if "cashier" in data else ua.string
-        pay = pays[0]
-        cancel_reason = f"사용자가 취소했습니다"
-        paid = pay.paid
-
-        if pay.pay_type.startswith("saved_money.d"):
-            try:
-                refund_pay = _refund_pay_type_saved_money(user, book, paid, cashier)
-                cancel_reason += f"(지역 적립금 환불: {refund_pay.paid})."
-            except Exception as e:
-                print(e)
-                return {
-                    "status": Pay.STATUS_REJECT,
-                    "message": f"적립금 환불에 실패하였습니다({e})",
-                }, 403
-
-        elif pay.pay_type.startswith("transfer"):
-            try:
-                saved_money: SavedMoney = SavedMoney.query.filter_by(
-                    name=book.department
-                ).first()
-                if not saved_money:
-                    return {"status": "reject", "message": "적립금 환불에 실패하였습니다."}, 403
-
-                refund_pay = Pay(
-                    user_id=user.id,
-                    book_id=book.id,
-                    saved_money_id=saved_money.id,
-                    cashier=cashier,
-                    pay_type=f"transfer.refund.{book.department}",
-                    paid=paid,
-                    comment="이체는 적립금으로 환불됩니다.",
-                    status="waiting",
-                )
-                saved_money.money = saved_money.money - refund_pay.paid
-                refund_pay.status = Pay.STATUS_CONFIRM
-                db.session.add(saved_money)
-                db.session.add(refund_pay)
-                db.session.commit()
-
-                cancel_reason += (
-                    f"(이체 금액을 {book.department} 적립금으로 환불: {refund_pay.paid} 원)."
-                )
-            except Exception as e:
-                print(e)
-                return {
-                    "status": Pay.STATUS_REJECT,
-                    "message": f"적립금 환불에 실패하였습니다({e})",
-                }, 403
-
-        elif pay.pay_type.startswith("card"):
-            transaction: Transaction = Transaction.query.filter_by(
-                pay_id=pay.id
-            ).first()
-            if (
-                not transaction
-                or transaction.type != 100
-                or transaction.response_code != "0000"
-            ):
-                return {
-                    "status": "reject",
-                    "message": "카드 결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
-                }, 403
-
-            try:
-                refund_pay = Pay(
-                    user_id=user.id,
-                    book_id=book.id,
-                    cashier=cashier,
-                    pay_type=f"card.refund.{book.department}",
-                    paid=paid,
-                    comment="카드 환불 요청중",
-                    status="waiting",
-                )
-                db.session.add(refund_pay)
-                db.session.commit()
-
-                refund_transaction = Transaction(
-                    user_id=book.user_id,
-                    pay_id=refund_pay.id,
-                    client_name=transaction.client_name,
-                    type=102,
-                    money=transaction.money,
-                    tax=transaction.tax,
-                    bongsa=transaction.bongsa,
-                    halbu=transaction.halbu,
-                    agree_num=transaction.authorization_number,
-                    agree_date=transaction.approval_datetime,
-                    cat_id=transaction.cat_id,
-                    myunse=transaction.myunse,
-                )
-                db.session.add(refund_transaction)
-                db.session.commit()
-
-                cancel_reason += f"(카드 환불 요청: [{transaction.issuer_name.strip()}] {refund_pay.paid})."
-            except Exception as e:
-                print(e)
-                return {
-                    "status": Pay.STATUS_REJECT,
-                    "message": f"적립금 환불에 실패하였습니다({e})",
-                }, 403
-        else:
-            return {
-                "status": Pay.STATUS_REJECT,
-                "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
-            }, 403
-    else:
-        return {
-            "status": Pay.STATUS_REJECT,
-            "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
-        }, 403
-
-    if not refund_pay:
-        return {
-            "status": Pay.STATUS_REJECT,
-            "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
-        }, 403
+    # for demo
+    # if not pays or len(pays) == 0:
+    #     if Pay.query.filter_by(book_id=book.id, status=Pay.STATUS_WAITING).all():
+    #         return {
+    #             "status": Pay.STATUS_REJECT,
+    #             "message": "결제 대기중인 예약은 취소가 불가합니다. 잠시 후에 다시 시도하세요.",
+    #         }, 403
+    #     cancel_reason += "사용자가 취소하였습니다."
+    #
+    #     book.reason = cancel_reason
+    #     book.status = RoomBook.STATUS_CANCELED
+    #     db.session.add(book)
+    #     db.session.add(
+    #         create_web_log(
+    #             "book.cancel.success", {"cancel_reason": cancel_reason}, user.id
+    #         )
+    #     )
+    #     db.session.commit()
+    #
+    #     result = book.publics_to_dict()
+    #     result["status"] = Pay.STATUS_CONFIRM
+    #     result["message"] = cancel_reason
+    #     result["refund_pay"] = None
+    #     return result
+    #
+    # elif len(pays) >= 2 and pays[0].paid == pays[-1].paid:
+    #     cancel_reason += "사용자가 취소했습니다(취소 환불 내역이 존재합니다)."
+    #
+    # elif len(pays) == 1:
+    #     # data = request.get_json()
+    #     # cashier = data["cashier"] if "cashier" in data else ua.string
+    #     pay = pays[0]
+    #     cancel_reason = f"사용자가 취소했습니다"
+    #     paid = pay.paid
+    #
+    #     if pay.pay_type.startswith("saved_money.d"):
+    #         try:
+    #             refund_pay = _refund_pay_type_saved_money(user, book, paid, cashier)
+    #             cancel_reason += f"(지역 적립금 환불: {refund_pay.paid})."
+    #         except Exception as e:
+    #             print(e)
+    #             return {
+    #                 "status": Pay.STATUS_REJECT,
+    #                 "message": f"적립금 환불에 실패하였습니다({e})",
+    #             }, 403
+    #
+    #     elif pay.pay_type.startswith("transfer"):
+    #         try:
+    #             saved_money: SavedMoney = SavedMoney.query.filter_by(
+    #                 name=book.department
+    #             ).first()
+    #             if not saved_money:
+    #                 return {"status": "reject", "message": "적립금 환불에 실패하였습니다."}, 403
+    #
+    #             refund_pay = Pay(
+    #                 user_id=user.id,
+    #                 book_id=book.id,
+    #                 saved_money_id=saved_money.id,
+    #                 cashier=cashier,
+    #                 pay_type=f"transfer.refund.{book.department}",
+    #                 paid=paid,
+    #                 comment="이체는 적립금으로 환불됩니다.",
+    #                 status="waiting",
+    #             )
+    #             saved_money.money = saved_money.money - refund_pay.paid
+    #             refund_pay.status = Pay.STATUS_CONFIRM
+    #             db.session.add(saved_money)
+    #             db.session.add(refund_pay)
+    #             db.session.commit()
+    #
+    #             cancel_reason += (
+    #                 f"(이체 금액을 {book.department} 적립금으로 환불: {refund_pay.paid} 원)."
+    #             )
+    #         except Exception as e:
+    #             print(e)
+    #             return {
+    #                 "status": Pay.STATUS_REJECT,
+    #                 "message": f"적립금 환불에 실패하였습니다({e})",
+    #             }, 403
+    #
+    #     elif pay.pay_type.startswith("card"):
+    #         transaction: Transaction = Transaction.query.filter_by(
+    #             pay_id=pay.id
+    #         ).first()
+    #         if (
+    #             not transaction
+    #             or transaction.type != 100
+    #             or transaction.response_code != "0000"
+    #         ):
+    #             return {
+    #                 "status": "reject",
+    #                 "message": "카드 결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
+    #             }, 403
+    #
+    #         try:
+    #             refund_pay = Pay(
+    #                 user_id=user.id,
+    #                 book_id=book.id,
+    #                 cashier=cashier,
+    #                 pay_type=f"card.refund.{book.department}",
+    #                 paid=paid,
+    #                 comment="카드 환불 요청중",
+    #                 status="waiting",
+    #             )
+    #             db.session.add(refund_pay)
+    #             db.session.commit()
+    #
+    #             refund_transaction = Transaction(
+    #                 user_id=book.user_id,
+    #                 pay_id=refund_pay.id,
+    #                 client_name=transaction.client_name,
+    #                 type=102,
+    #                 money=transaction.money,
+    #                 tax=transaction.tax,
+    #                 bongsa=transaction.bongsa,
+    #                 halbu=transaction.halbu,
+    #                 agree_num=transaction.authorization_number,
+    #                 agree_date=transaction.approval_datetime,
+    #                 cat_id=transaction.cat_id,
+    #                 myunse=transaction.myunse,
+    #             )
+    #             db.session.add(refund_transaction)
+    #             db.session.commit()
+    #
+    #             cancel_reason += f"(카드 환불 요청: [{transaction.issuer_name.strip()}] {refund_pay.paid})."
+    #         except Exception as e:
+    #             print(e)
+    #             return {
+    #                 "status": Pay.STATUS_REJECT,
+    #                 "message": f"적립금 환불에 실패하였습니다({e})",
+    #             }, 403
+    #     else:
+    #         return {
+    #             "status": Pay.STATUS_REJECT,
+    #             "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
+    #         }, 403
+    # else:
+    #     return {
+    #         "status": Pay.STATUS_REJECT,
+    #         "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
+    #     }, 403
+    #
+    # if not refund_pay:
+    #     return {
+    #         "status": Pay.STATUS_REJECT,
+    #         "message": "결제 정보가 올바르지 않습니다. 관리자에게 문의 바랍니다.",
+    #     }, 403
 
     book.reason = cancel_reason
     book.status = RoomBook.STATUS_CANCELED
@@ -637,9 +638,9 @@ def _put_book_cancel(user: User, book_id: int):
     db.session.commit()
 
     result = book.publics_to_dict()
-    result["status"] = refund_pay.status
-    result["message"] = cancel_reason
-    result["refund_pay"] = refund_pay.publics_to_dict()
+    # for demo
+    result["status"] = "confirm"
+    result["message"] = cancel_reason + '취소되었습니다.'
     return result
 
 
