@@ -111,16 +111,22 @@ def chat_id_required(func):
 
 # After 2.10.6
 def is_allow_referrer(referrer: str) -> bool:
-    """Referrer 확인"""
-    if not referrer:
-        return False
+    """Referrer 확인
+    Demo 도메인 변경 오류가 많이 생겨서 비활성화합니다.
+    """
+    return True
 
-    is_referrer_start_localhost3000 = str(referrer).startswith("http://localhost:3000")
-    is_referrer_start_localhost5000 = str(referrer).startswith("http://localhost:5000")
-    is_referrer_start_127_0_0_15000 = str(referrer).startswith("http://127.0.0.1:5000")
-    is_referrer_start_192_168_0_57 = str(referrer).startswith("http://192.168.0.57:8000")
-    is_referrer_start_cafe_kkyubr = str(referrer).startswith("https://cafe.kkyubr.com")
-    is_referrer_start_store_kesuna = str(referrer).startswith("https://store.kesuna.com")
-    return (is_referrer_start_localhost3000 or is_referrer_start_localhost5000 or
-            is_referrer_start_127_0_0_15000 or is_referrer_start_cafe_kkyubr or
-            is_referrer_start_192_168_0_57 or is_referrer_start_store_kesuna)
+    # if not referrer:
+    #     return False
+    #
+    # is_referrer_start_localhost3000 = str(referrer).startswith("http://localhost:3000")
+    # is_referrer_start_localhost5000 = str(referrer).startswith("http://localhost:5000")
+    # is_referrer_start_127_0_0_15000 = str(referrer).startswith("http://127.0.0.1:5000")
+    # is_referrer_start_192_168_0_57 = str(referrer).startswith("http://192.168.0.57:8000")
+    # is_referrer_start_cafe_kkyubr = str(referrer).startswith("https://cafe.kkyubr.com")
+    # is_referrer_start_store_kesuna = str(referrer).startswith("https://store.kesuna.com")
+    # is_referrer_start_store_kkyubr = str(referrer).startswith("https://store2.kkyubr.com")
+    # return (is_referrer_start_localhost3000 or is_referrer_start_localhost5000 or
+    #         is_referrer_start_127_0_0_15000 or is_referrer_start_cafe_kkyubr or
+    #         is_referrer_start_192_168_0_57 or is_referrer_start_store_kesuna or
+    #         is_referrer_start_store_kkyubr)

@@ -8,14 +8,16 @@ def create_app() -> Flask:
 
     if app.debug:
         app.config.from_object("config.DevelopmentConfig")
-        try:
-            print("cors")
-            from flask_cors import CORS
-            CORS(app, resources={"*": {"origins": "*"}})
-        except ImportError:
-            pass
+
     else:
         app.config.from_object("config.ProductionConfig")
+
+    try:
+        from flask_cors import CORS
+        CORS(app, resources={"*": {"origins": "*"}})
+    except ImportError:
+        print("CORS Error")
+        pass
 
     # ensure the instance folder exists
     try:
@@ -115,12 +117,6 @@ def create_app() -> Flask:
         resp.set_cookie("Authorization", "", expires=0)
         return resp
 
-    @app.route("/", defaults={'path': ''})
-    def serve(path):
-        resp = make_response(send_from_directory(app.static_folder, 'index.html'))
-        resp.set_cookie("Authorization", "", expires=0)
-        return resp
-
     @app.route("/qr", defaults={'path': ''})
     def serve_qr(path):
         return render_template("qr.html")
@@ -155,4 +151,28 @@ def create_app() -> Flask:
             "copyright": __version__.__copyright__,
             "login": bool(request.cookies.get("Authorization"))
         }
+
+    @app.route("/", defaults={'path': ''})
+    @app.route("/admin", defaults={'path': 'admin'})
+    @app.route("/users", defaults={'path': 'admin'})
+    @app.route("/books", defaults={'path': 'admin'})
+    @app.route("/lockers", defaults={'path': 'admin'})
+    @app.route("/configs", defaults={'path': 'admin'})
+    @app.route("/exports", defaults={'path': 'admin'})
+    @app.route("/logs", defaults={'path': 'admin'})
+    @app.route("/blocker", defaults={'path': 'admin'})
+    @app.route("/commute", defaults={'path': 'admin'})
+    @app.route("/accounts", defaults={'path': 'admin'})
+    @app.route("/chart", defaults={'path': 'admin'})
+    @app.route("/coupon", defaults={'path': 'admin'})
+    @app.route("/statusBook", defaults={'path': 'admin'})
+    def serve(path):
+        if path:
+            resp = make_response(redirect("/"))
+        else:
+            resp = make_response(send_from_directory(app.static_folder, 'index.html'))
+
+        resp.set_cookie("Authorization", "", expires=0)
+        return resp
+
     return app
